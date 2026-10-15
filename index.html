@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="km"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Admin | Julian Topup</title><meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1220;--sb:#0a0c18;--card:#171b2e;--line:#262b45;--ink:#e8eaff;--mut:#98a0d0;--ac:#6d86ff;--ok:#2fd3a6;--bad:#ff6b95}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 'Kantumruy Pro',system-ui,sans-serif;display:flex;min-height:100vh}
+aside{width:220px;background:var(--sb);padding:16px 10px;position:sticky;top:0;height:100vh;flex:none}
+aside b{display:block;padding:6px 12px 16px;font-size:1.1rem}
+aside a{display:block;padding:10px 12px;border-radius:10px;color:var(--mut);cursor:pointer}
+aside a.on,aside a:hover{background:var(--card);color:var(--ink)}
+main{flex:1;padding:24px;min-width:0}h2{margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;overflow-x:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.grid .card{margin:0}.grid b{font-size:1.6rem;display:block}
+table{width:100%;border-collapse:collapse}td,th{padding:6px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}th{color:var(--mut);font-weight:600}
+input,select{width:100%;min-width:90px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
+label{display:block;margin:12px 0 4px;color:var(--mut)}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:9px 16px;background:var(--ac);color:#fff;font-weight:600}
+button.g{background:var(--line);color:var(--ink)}button.d{background:none;color:var(--bad);padding:6px}
+.im{width:56px;height:56px;padding:0;background:var(--bg);border:1px dashed var(--mut);color:var(--mut);font-size:1.4rem;overflow:hidden}.im img{width:100%;height:100%;object-fit:cover}.im.w{width:160px}
+.bar{position:sticky;bottom:0;display:flex;gap:10px;justify-content:flex-end;padding:12px 0;background:linear-gradient(transparent,var(--bg) 30%)}
+#login{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:9}#login div{width:min(340px,90vw)}
+#t{position:fixed;top:16px;right:16px;background:var(--ok);color:#04251c;padding:8px 16px;border-radius:10px;font-weight:700;display:none;z-index:10}
+@media(max-width:760px){body{flex-direction:column}aside{width:auto;height:auto;position:static;display:flex;overflow-x:auto;padding:8px}aside b{display:none}aside a{white-space:nowrap}main{padding:14px}}
+</style></head><body>
+<div id="login"><div><h2>Julian Topup Admin</h2><label>ពាក្យសម្ងាត់</label><input id="pw" type="password" autofocus><p id="le" style="color:var(--bad)"></p><button id="lb" style="width:100%">ចូល</button></div></div>
+<aside><b>💎 Julian Topup</b><a data-pg="dashboard">ផ្ទាំងគ្រប់គ្រង</a><a data-pg="games">ហ្គេម</a><a data-pg="products">កញ្ចប់ / តម្លៃ</a><a data-pg="orders">បញ្ជាទិញ</a><a data-pg="payments">ការទូទាត់</a><a data-pg="settings">ការកំណត់</a></aside>
+<main id="m"></main><div id="t"></div>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let PW=sessionStorage.pw||'',C,ORD=[],pg='dashboard',gi=0;
+const H=()=>({'x-admin':PW,'Content-Type':'application/json'});
+const get=k=>k.reduce((o,x)=>o[x],C),set=(p,v)=>{const k=p.split('.'),l=k.pop();get(k)[l]=v};
+const toast=m=>{const t=$('#t');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',1800)};
+async function boot(){
+  const o=await fetch('/api/order',{headers:H()});if(!o.ok){$('#login').style.display='grid';$('#le').textContent=PW?'ពាក្យសម្ងាត់មិនត្រឹមត្រូវ':'';return}
+  ORD=await o.json();C=await (await fetch('/api/config',{headers:H()})).json();C.khqr=C.khqr||{};$('#login').style.display='none';render()}
+$('#lb').onclick=()=>{PW=$('#pw').value;sessionStorage.pw=PW;boot()};$('#pw').onkeydown=e=>e.key==='Enter'&&$('#lb').click();
+async function save(){const r=await fetch('/api/config',{method:'POST',headers:H(),body:JSON.stringify(C)});toast(r.ok?'បានរក្សាទុក ✓':'រក្សាទុកមិនបាន')}
+const inp=(p,v,t='text')=>`<input data-p="${p}" type="${t}" ${t==='number'?'step="any"':''} value="${esc(v)}">`;
+const img=(p,v,w='')=>`<button class="im ${w}" data-up="${p}">${v?`<img src="${esc(v)}">`:'+'}</button>`;
+const sv=`<div class="bar"><button onclick="save()">រក្សាទុក</button></div>`;
+function shrink(f,max){return new Promise(res=>{const i=new Image;i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);res(c.toDataURL('image/webp',.85))};i.src=URL.createObjectURL(f)})}
+document.addEventListener('input',e=>{const t=e.target,p=t.dataset.p;if(p)set(p,t.type==='number'?+t.value:t.value)});
+document.addEventListener('click',async e=>{
+  const a=e.target.closest('[data-pg]'),u=e.target.closest('[data-up]'),d=e.target.closest('[data-del]'),n=e.target.closest('[data-add]');
+  if(a){pg=a.dataset.pg;render()}
+  if(d){const k=d.dataset.del.split('.'),i=+k.pop();get(k).splice(i,1);render()}
+  if(n){const k=n.dataset.add;if(k==='games')C.games.push({id:'g'+Date.now(),short:'ហ្គេមថ្មី',name:'ហ្គេមថ្មី',region:'GLOBAL',mono:'NG',tint:'#3355F5',unit:'Diamonds',unitKm:'គ្រាប់ពេជ្រ',server:false,idType:'num',pop:2,packs:[]});else get(k.split('.')).push([0,0]);render()}
+  if(u){const f=document.createElement('input');f.type='file';f.accept='image/*';f.onchange=async()=>{if(!f.files[0])return;toast('កំពុង Upload...');
+    const data=await shrink(f.files[0],u.classList.contains('w')?1400:512),r=await fetch('/api/upload',{method:'POST',headers:H(),body:JSON.stringify({data})});
+    if(!r.ok)return toast('Upload មិនបាន');set(u.dataset.up,(await r.json()).url);render();toast('Upload រួច — ចុច រក្សាទុក')};f.click()}
+});
+const P={
+dashboard:()=>`<h2>ផ្ទាំងគ្រប់គ្រង</h2><div class="grid"><div class="card">ហ្គេម<b>${C.games.length}</b></div><div class="card">បញ្ជាទិញ<b>${ORD.length}</b></div><div class="card">ចំណូលសរុប<b>$${ORD.reduce((s,o)=>s+o.usd,0).toFixed(2)}</b></div></div>`,
+games:()=>`<h2>ហ្គេម</h2><div class="card"><table><tr><th>Logo</th><th>ឈ្មោះ</th><th>តំបន់</th><th>ឈ្មោះខ្លី</th><th></th></tr>${C.games.map((g,i)=>`<tr><td>${img(`games.${i}.logo`,g.logo)}</td><td>${inp(`games.${i}.name`,g.name)}</td><td>${inp(`games.${i}.region`,g.region)}</td><td>${inp(`games.${i}.short`,g.short)}</td><td><button class="d" data-del="games.${i}">លុប</button></td></tr>`).join('')}</table><p><button class="g" data-add="games">+ បន្ថែមហ្គេម</button></p></div>${sv}`,
+products:()=>{const g=C.games[gi]||{packs:[]};return `<h2>កញ្ចប់ / តម្លៃ</h2><div class="card"><select onchange="gi=+this.value;render()">${C.games.map((x,i)=>`<option value="${i}" ${i==gi?'selected':''}>${esc(x.name)} ${esc(x.region)}</option>`).join('')}</select><table><tr><th>រូប</th><th>ចំនួន</th><th>តម្លៃ $</th><th></th></tr>${g.packs.map((p,j)=>`<tr><td>${img(`games.${gi}.packs.${j}.2`,p[2])}</td><td>${inp(`games.${gi}.packs.${j}.0`,p[0],'number')}</td><td>${inp(`games.${gi}.packs.${j}.1`,p[1],'number')}</td><td><button class="d" data-del="games.${gi}.packs.${j}">លុប</button></td></tr>`).join('')}</table><p><button class="g" data-add="games.${gi}.packs">+ បន្ថែមកញ្ចប់</button></p></div>${sv}`},
+orders:()=>`<h2>បញ្ជាទិញ</h2><div class="card"><table><tr><th>កូដ</th><th>ព័ត៌មាន</th><th>$</th><th>ពេល</th></tr>${ORD.map(o=>`<tr><td>${esc(o.code)}</td><td>${o.rows.slice(1).map(r=>esc(r[0]+': '+r[1])).join('<br>')}</td><td>${o.usd.toFixed(2)}</td><td>${new Date(o.t).toLocaleString()}</td></tr>`).join('')||'<tr><td>មិនទាន់មានបញ្ជាទិញ</td></tr>'}</table></div>`,
+payments:()=>`<h2>ការទូទាត់</h2><div class="card"><label>រូប QR ទូទាត់ (បើដាក់ នឹងប្រើជំនួស KHQR ស្វ័យប្រវត្តិ)</label>${img('qrImage',C.qrImage)}${C.qrImage?'<button class="d" onclick="delete C.qrImage;render()">លុបរូប</button>':''}<label>អត្រា ១$ = ប៉ុន្មានរៀល</label>${inp('rate',C.rate,'number')}<label>Bakong Account ID</label>${inp('khqr.account',C.khqr.account)}<label>ឈ្មោះអ្នកលក់</label>${inp('khqr.name',C.khqr.name)}<label>ទីក្រុង</label>${inp('khqr.city',C.khqr.city)}</div>${sv}`,
+settings:()=>`<h2>ការកំណត់</h2><div class="card"><label>រូប Banner ទំព័រដើម</label>${img('banner',C.banner,'w')}${C.banner?'<button class="d" onclick="delete C.banner;render()">លុប</button>':''}<label>Favicon (រូប logo JULIAN SR)</label>${img('favicon',C.favicon)}<label>Telegram username ហាង (គ្មាន @)</label>${inp('telegram',C.telegram)}<label>Telegram Bot Token</label>${inp('tgToken',C.tgToken,'password')}<label>Telegram Group Chat ID</label>${inp('tgChat',C.tgChat)}</div>${sv}`};
+function render(){document.querySelectorAll('aside a').forEach(a=>a.classList.toggle('on',a.dataset.pg===pg));$('#m').innerHTML=P[pg]()}
+boot();
+</script></body></html>
